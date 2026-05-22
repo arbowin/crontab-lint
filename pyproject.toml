@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "crontab-lint"
+version = "0.1.0"
+description = "Static analyzer and validator for crontab expressions with human-readable explanations."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+keywords = ["crontab", "cron", "lint", "validator"]
+
+[project.scripts]
+crontab-lint = "crontab_lint.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["crontab_lint*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["crontab_lint"]
+omit = ["crontab_lint/cli.py"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
