@@ -1,72 +1,59 @@
-"""Human-readable formatting for lint results."""
+"""Format lint results and (optionally) upcoming schedule for human output."""
 
-from crontab_lint.linter import LintResult
-from crontab_lint.validator import ValidationIssue
+from __future__ import annotations
 
+from typing import List
 
-SEVERITY_ICONS = {
-    "error": "✗",
-    "warning": "⚠",
-    "info": "ℹ",
-}
-
-SEVERITY_LABELS = {
-    "error": "ERROR",
-    "warning": "WARNING",
-    "info": "INFO",
-}
+from .linter import LintResult
+from .validator import ValidationIssue
 
 
 def _format_issue(issue: ValidationIssue) -> str:
-    icon = SEVERITY_ICONS.get(issue.severity, "?")
-    label = SEVERITY_LABELS.get(issue.severity, issue.severity.upper())
-    return f"  {icon} [{label}] {issue.message}"
+    level = issue.level.upper()
+    return f"  [{level}] {issue.message}"
 
 
-def format_result(result: LintResult, verbose: bool = False) -> str:
-    """Format a single LintResult into a human-readable string."""
-    lines = []
-    lines.append(f"Expression: {result.expression}")
+def format_result(result: LintResult, verbose: bool = False, show_next: int = 0) -> str:
+    """Return a human-readable string describing *result*.
+
+    Parameters
+    ----------
+    result:
+        A ``LintResult`` produced by :func:`crontab_lint.linter.lint`.
+    verbose:
+        When *True*, always print the explanation even if there are no issues.
+    show_next:
+        If greater than 0, append the next *show_next* scheduled run times.
+        Requires the expression to be valid; silently skipped otherwise.
+    """
+    lines: List[str] = []
+    lines.append(f"Expression : {result.expression}")
 
     if result.explanation:
-        lines.append(f"Meaning:    {result.explanation}")
+        lines.append(f"Explanation: {result.explanation}")
 
-    if result.issues:
-        lines.append("Issues:")
+    if not result.issues:
+        if verbose:
+            lines.append("Status     : OK")
+    else:
         for issue in result.issues:
             lines.append(_format_issue(issue))
-    elif verbose:
-        lines.append("  ✓ No issues found")
 
-    status = "INVALID" if result.has_errors else ("WARNING" if result.has_warnings else "OK")
-    lines.append(f"Status:     {status}")
+    if show_next > 0 and result.valid:
+        try:
+            from .schedule import next_runs  # local import to keep module optional
+
+            runs = next_runs(result.expression, count=show_next)
+            lines.append(f"Next {show_next} run(s):")
+            for dt in runs:
+                lines.append(f"  {dt.strftime('%Y-%m-%d %H:%M')}")
+        except Exception:  # pragma: no cover
+            pass
 
     return "\n".join(lines)
 
 
-def format_many(results: list[LintResult], verbose: bool = False) -> str:
-    """Format multiple LintResults into a summary report."""
-    if not results:
-        return "No expressions to lint."
-
-    sections = []
-    for i, result in enumerate(results, start=1):
-        header = f"[{i}/{len(results)}] "
-        body = format_result(result, verbose=verbose)
-        indented = "\n".join(
-            (header + line if j == 0 else "       " + line)
-            for j, line in enumerate(body.splitlines())
-        )
-        sections.append(indented)
-
-    total = len(results)
-    errors = sum(1 for r in results if r.has_errors)
-    warnings = sum(1 for r in results if r.has_warnings and not r.has_errors)
-    ok = total - errors - warnings
-
-    summary_lines = [
-        "-" * 50,
-        f"Summary: {total} expression(s) — {ok} OK, {warnings} warning(s), {errors} error(s)",
-    ]
-
-    return "\n\n".join(sections) + "\n" + "\n".join(summary_lines)
+def format_many(results: List[LintResult], verbose: bool = False, show_next: int = 0) -> str:
+    """Format multiple lint results separated by blank lines."""
+    sections = [format_result(r, verbose=verbose, show_next=show_next) for r in results]
+    return "\n\n".join(sections)
