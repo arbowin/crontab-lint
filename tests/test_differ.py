@@ -87,3 +87,15 @@ def test_result_stores_original_expressions():
     result = diff("0 * * * * /bin/a", "5 * * * * /bin/b")
     assert result.old_expression == "0 * * * * /bin/a"
     assert result.new_expression == "5 * * * * /bin/b"
+
+
+def test_all_five_fields_changed():
+    """Verify that changes across all five schedule fields are each reported."""
+    result = diff("0 6 1 1 0 /bin/foo", "30 12 15 6 5 /bin/foo")
+    fields = [d.field for d in result.field_diffs]
+    assert len(result.field_diffs) == 5
+    assert "minute" in fields
+    assert "hour" in fields
+    assert "day" in fields
+    assert "month" in fields
+    assert "weekday" in fields
