@@ -82,3 +82,12 @@ def test_format_comparison_shows_unresolvable():
     output = format_comparison(result)
     assert "Could not normalize" in output
     assert "bad" in output
+
+
+def test_total_expressions_counts_valid_and_invalid():
+    """total_expressions() should include both grouped and unresolvable entries."""
+    result = compare(["0 * * * * a", "0 * * * * b", "invalid1", "invalid2"])
+    assert result.total_expressions() == 4
+    assert len(result.unresolvable) == 2
+    assert len(result.groups) == 1
+    assert result.groups[0].size() == 2
