@@ -47,6 +47,12 @@ def test_summarize_mixed():
     assert report.errors == 1
 
 
+def test_summarize_total_equals_sum_of_parts():
+    """Ensure total always equals valid + warnings + errors."""
+    report = summarize([VALID_EXPR, WARN_EXPR, ERROR_EXPR])
+    assert report.total == report.valid + report.warnings + report.errors
+
+
 def test_format_summary_contains_totals():
     report = summarize([VALID_EXPR, ERROR_EXPR])
     text = format_summary(report)
