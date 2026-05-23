@@ -56,6 +56,16 @@ def test_to_json_empty_list():
     assert json.loads(output) == []
 
 
+def test_to_json_issue_fields_present():
+    """Each issue dict should contain 'severity', 'field', and 'message' keys."""
+    results = [lint("99 * * * * echo hi")]
+    data = json.loads(to_json(results))
+    issue = data[0]["issues"][0]
+    assert "severity" in issue
+    assert "field" in issue
+    assert "message" in issue
+
+
 # ---------------------------------------------------------------------------
 # to_csv
 # ---------------------------------------------------------------------------
