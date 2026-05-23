@@ -42,7 +42,11 @@ def _expand_shorthand(expression: str) -> tuple[str, bool]:
 
 
 def _normalize_field(value: str) -> str:
-    """Normalize a single cron field value."""
+    """Normalize a single cron field value.
+
+    Removes leading zeros from numeric values and normalizes step and range
+    expressions. For example, '01,02-05,*/02' becomes '1,2-5,*/2'.
+    """
     if value == "*":
         return value
     # Remove leading zeros from numbers in lists and ranges
@@ -62,7 +66,18 @@ def _normalize_field(value: str) -> str:
 
 
 def normalize(expression: str) -> NormalizeResult:
-    """Normalize a crontab expression to its canonical form."""
+    """Normalize a crontab expression to its canonical form.
+
+    Expands shorthand expressions (e.g. ``@daily``), strips leading zeros from
+    numeric fields, and reassembles the expression as a single canonical string.
+
+    Args:
+        expression: A crontab expression, optionally including a command.
+
+    Returns:
+        A :class:`NormalizeResult` describing the original expression, the
+        normalized form, whether a shorthand was expanded, and any parse error.
+    """
     expanded, was_shorthand = _expand_shorthand(expression)
 
     try:
