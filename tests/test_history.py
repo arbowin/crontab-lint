@@ -98,6 +98,23 @@ def test_save_and_load_history():
         os.unlink(path)
 
 
+def test_save_history_produces_valid_json():
+    """Ensure save_history writes valid JSON that can be parsed independently."""
+    h = History()
+    h.add(lint("0 * * * * job1"))
+    with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+        path = f.name
+    try:
+        save_history(h, path)
+        with open(path) as f:
+            data = json.load(f)
+        assert isinstance(data, list)
+        assert len(data) == 1
+        assert "expression" in data[0]
+    finally:
+        os.unlink(path)
+
+
 def test_load_history_missing_file_returns_empty():
     h = load_history("/tmp/does_not_exist_crontab_lint_xyz.json")
     assert h.entries == []
