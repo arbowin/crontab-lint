@@ -55,3 +55,17 @@ def test_output_contains_expression(capsys):
     main(["0 0 * * * cmd"])
     captured = capsys.readouterr()
     assert "0 0 * * * cmd" in captured.out
+
+
+def test_file_flag_empty_file_returns_2(tmp_path):
+    """An empty crontab file should be treated as no input and return exit code 2."""
+    f = tmp_path / "empty.txt"
+    f.write_text("")
+    assert main(["-f", str(f)]) == 2
+
+
+def test_file_flag_only_comments_returns_2(tmp_path):
+    """A file containing only comments (no valid entries) should return exit code 2."""
+    f = tmp_path / "comments_only.txt"
+    f.write_text("# comment one\n# comment two\n")
+    assert main(["-f", str(f)]) == 2
